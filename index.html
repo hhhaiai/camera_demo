@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,34 +12,33 @@
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             text-align: center;
         }
-        
+
         h1 {
             color: #333;
             margin-bottom: 20px;
         }
-        
+
         .video-container {
             position: relative;
             display: inline-block;
             border: 3px solid #333;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-        
+
         #video {
             display: block;
             width: 960px;
             height: 720px;
-            transform: scaleX(-1); /* 镜像翻转 */
         }
-        
+
         #canvas {
             position: absolute;
             top: 0;
@@ -46,13 +46,12 @@
             width: 960px;
             height: 720px;
             pointer-events: none;
-            transform: scaleX(-1); /* 镜像翻转 */
         }
-        
+
         .controls {
             margin: 20px 0;
         }
-        
+
         button {
             padding: 10px 20px;
             margin: 0 10px;
@@ -64,42 +63,42 @@
             color: white;
             transition: background-color 0.3s;
         }
-        
+
         button:hover {
             background-color: #0056b3;
         }
-        
+
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
         }
-        
+
         .status {
             margin: 10px 0;
             padding: 10px;
             border-radius: 5px;
             font-weight: bold;
         }
-        
+
         .status.ready {
             background-color: #d4edda;
             color: #155724;
         }
-        
+
         .status.drawing {
             background-color: #fff3cd;
             color: #856404;
         }
-        
+
         .status.error {
             background-color: #f8d7da;
             color: #721c24;
         }
-        
+
         .color-picker {
             margin: 10px 0;
         }
-        
+
         .color-option {
             display: inline-block;
             width: 30px;
@@ -110,33 +109,37 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
-        
+
         .color-option:hover {
             transform: scale(1.2);
         }
-        
+
         .color-option.selected {
             border-width: 4px;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>AI手势绘画应用</h1>
-        <p>🎨 拇指+食指捏合开始绘画，食指移动进行绘画，食指指向掌心停止绘画</p>
-        
+        <p>🎨 <strong>新绘画逻辑：</strong>拇指+食指捏合开始绘画，松开手指后用食指移动绘画</p>
+        <p style="color: #666; font-size: 14px;">✨ 已优化：手部骨架位置准确，性能提升，延迟降低</p>
+        <p style="color: #007bff; font-size: 12px;">📍 显示方式：左手在屏幕左侧，右手在屏幕右侧，与真实位置一致！</p>
+        <p style="color: #28a745; font-size: 12px;">🎯 绘画步骤：1️⃣ 捏合开始 → 2️⃣ 松开手指 → 3️⃣ 食指移动绘画 → 4️⃣ 指向掌心停止</p>
+
         <div class="video-container">
             <video id="video" autoplay muted></video>
             <canvas id="canvas"></canvas>
         </div>
-        
+
         <div class="controls">
             <button id="startBtn">启动摄像头</button>
             <button id="retryBtn" style="display: none;">重试启动</button>
             <button id="clearBtn">清除画布</button>
             <button id="saveBtn">保存图片</button>
         </div>
-        
+
         <div class="color-picker">
             <span>选择颜色：</span>
             <div class="color-option selected" data-color="#ff0000" style="background-color: #ff0000;"></div>
@@ -148,19 +151,31 @@
             <div class="color-option" data-color="#ffffff" style="background-color: #ffffff;"></div>
             <div class="color-option" data-color="#000000" style="background-color: #000000;"></div>
         </div>
-        
+
         <div id="status" class="status">点击"启动摄像头"开始</div>
-        
-        <div id="debug" style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-family: monospace; font-size: 12px; text-align: left; max-width: 640px; margin-left: auto; margin-right: auto;">
+
+        <div id="drawingStatus"
+            style="margin: 10px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+            <div style="font-weight: bold; color: #007bff; margin-bottom: 5px;">📊 绘画状态监控</div>
+            <div id="drawingInfo">等待启动摄像头...</div>
+        </div>
+
+        <div id="debug"
+            style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-family: monospace; font-size: 12px; text-align: left; max-width: 640px; margin-left: auto; margin-right: auto;">
             <strong>调试信息：</strong><br>
             <div id="debugInfo">等待启动...</div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6.1629159505/control_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6.1629159505/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js"
+        crossorigin="anonymous"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
